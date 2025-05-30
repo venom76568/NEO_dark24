@@ -1,4 +1,6 @@
 <?php
+ob_start(); // Start output buffering
+
 require('fpdf.php');
 
 function sanitizeFileName(string $string): string {
@@ -18,23 +20,19 @@ class PDFCertificate extends FPDF {
     }
 
     function Header() {
-        // Place background image on full page
+        // Set background image
         $this->Image($this->template, 0, 0, $this->GetPageWidth(), $this->GetPageHeight());
     }
 
     function AddName() {
-        // Add your custom font
-        $this->AddFont('Belleza','','Belleza.php');  // Make sure Belleza.php font definition exists (see note below)
-
-        $this->SetFont('Belleza','',33);  // Adjust font size here
+        $this->AddFont('Belleza','','Belleza.php'); // Font definition file must exist
+        $this->SetFont('Belleza','',33); // Adjust size as needed
         $this->SetTextColor(0, 0, 0);
 
-        // Calculate width of the text for centering
+        // Calculate text width and position
         $textWidth = $this->GetStringWidth($this->name);
-
-        // Center horizontally, vertical position adjust as needed
-        $x = 170;
-        $y = 116; // Adjust Y position as needed
+        $x = 170; // You can center it dynamically using: ($this->GetPageWidth() - $textWidth) / 2
+        $y = 116; // Adjust Y position to fit your template
 
         $this->SetXY($x, $y);
         $this->Write(0, $this->name);
@@ -71,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_form'])) 
         }
 
         if ($found) {
-            $templatePath = 'cert_template.jpg'; // Your background image
-            $fontPath = __DIR__ . '/Belleza.ttf'; // Your TTF font file
+            $templatePath = 'cert_template.jpg';
+            $fontPath = _DIR_ . '/font/Belleza.ttf';
 
             if (!file_exists($templatePath)) {
                 throw new RuntimeException("Certificate template image not found.");
@@ -82,19 +80,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_form'])) 
                 throw new RuntimeException("Font file not found.");
             }
 
-            // Create PDF
             $pdf = new PDFCertificate('L', 'mm', 'A4', $templatePath, $fontPath, $name);
             $pdf->AddPage();
-
-            // Register the font (FPDF needs font files converted to .php font files)
-            // If you don't have Belleza.php, see note below how to create it
-            $pdf->AddFont('Belleza','','Belleza.php');
-
             $pdf->AddName();
 
-            $cleanName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $name);
+            $cleanName = sanitizeFileName($name);
             $pdfOutput = "NEO25_Certificate_$cleanName.pdf";
-            $pdf->Output('D', $pdfOutput);
+
+            // Set proper headers for mobile download
+            header('Content-Type: application/pdf');
+            header('Content-Disposition: attachment; filename="' . $pdfOutput . '"');
+            header('Cache-Control: private, max-age=0, must-revalidate');
+            header('Pragma: public');
+
+            $pdf->Output('I', $pdfOutput); // 'I' = inline display, 'D' = force download
         } else {
             echo "<h3 style='color:red; text-align:center;'>Phone number not found in our records. Please check and try again.</h3>";
         }
@@ -102,4 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_form'])) 
         echo "<h3 style='color:red; text-align:center;'>Error: " . htmlspecialchars($e->getMessage()) . "</h3>";
     }
 }
+
+ob_end_flush(); // Send output buffer
 ?>
