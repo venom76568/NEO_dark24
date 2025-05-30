@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_form'])) 
 
         if ($found) {
             $templatePath = 'cert_template.jpg';
-            $fontPath = _DIR_ . '/font/Belleza.ttf';
+            $fontPath = __DIR__ . '/Belleza.ttf';
 
             if (!file_exists($templatePath)) {
                 throw new RuntimeException("Certificate template image not found.");
