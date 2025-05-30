@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['certificate_form'])) 
             header('Cache-Control: private, max-age=0, must-revalidate');
             header('Pragma: public');
 
-            $pdf->Output('D', $pdfOutput); // 'I' = inline display, 'D' = force download
+            $pdf->Output('I', $pdfOutput); // 'I' = inline display, 'D' = force download
         } else {
             echo "<h3 style='color:red; text-align:center;'>Phone number not found in our records. Please check and try again.</h3>";
         }
